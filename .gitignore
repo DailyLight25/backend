@@ -1,0 +1,48 @@
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+env/
+*.env
+
+# Django-specific files
+*.sqlite3
+db.sqlite3
+*.log
+*.pot
+
+# Static files (collected with collectstatic)
+staticfiles/
+static/
+media/
+
+# Secret or environment files
+.env
+*.secret
+*.pem
+
+# IDE/editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test output
+htmlcov/
+coverage.xml
+*.cover
+
+# Migrations (optional – only if you recreate them often)
+**/migrations/__pycache__/
+**/migrations/*.pyc
+
+# Node/npm files (if using npm or Tailwind etc.)
+node_modules/
+package-lock.json
