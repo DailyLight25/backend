@@ -21,9 +21,9 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('users.urls')), # Authentication endpoints
-    path('api/', include('posts.urls')), # Blog post endpoints
-    path('api/', include('files.urls')), # File upload endpoints
+    path('users/', include('users.urls')), # Authentication endpoints
+    path('posts/', include('posts.urls')), # Blog post endpoints
+    path('files/', include('files.urls')), # File upload endpoints
     # TODO: Add other app URLs here as you create them:
     # path('api/', include('comments.urls')),
     # path('api/', include('prayer_requests.urls')),
