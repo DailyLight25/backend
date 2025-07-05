@@ -1,6 +1,7 @@
 from django.db import models
 from posts.models import Post
-from django.contrib.postgres.fields import JSONField # For AI moderation feedback
+# Change the import:
+from django.db.models import JSONField # <--- CHANGE THIS LINE!
 
 class File(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='files', null=True, blank=True)

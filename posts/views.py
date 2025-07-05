@@ -6,6 +6,8 @@ from django.core.cache import cache
 from .models import Post, Reaction
 from .serializers import PostSerializer, ReactionSerializer
 from .permissions import IsAuthorOrReadOnly, IsAdminUserOrReadOnly # Custom permissions (define below)
+from django.db import models # <--- ADD THIS LINE!
+
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.filter(status='published') # Only show published posts by default

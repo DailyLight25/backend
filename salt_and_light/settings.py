@@ -44,6 +44,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+   # Django REST Framework
+    'rest_framework',
+    'rest_framework.authtoken', # For token authentication
+
+    # dj-rest-auth
+    'dj_rest_auth',
+    'dj_rest_auth.registration', # If you're using the registration views
+
+    # allauth (Crucial for this error)
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount', # Include this if you plan to use social logins
+    'drf_yasg', # <--- Make sure this is here!
 ]
 
 MIDDLEWARE = [
@@ -54,6 +67,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    'allauth.account.middleware.AccountMiddleware', # Add this line
 ]
 
 ROOT_URLCONF = 'salt_and_light.urls'

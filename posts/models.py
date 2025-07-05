@@ -1,5 +1,6 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField # For PostgreSQL JSONB field
+# Change the import:
+from django.db.models import JSONField # <--- CHANGE THIS LINE!
 from users.models import User # Import the custom User model
 
 class Post(models.Model):
