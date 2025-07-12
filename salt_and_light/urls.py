@@ -25,9 +25,9 @@ urlpatterns = [
     path('posts/', include('posts.urls')), # Blog post endpoints
     path('files/', include('files.urls')), # File upload endpoints
     # TODO: Add other app URLs here as you create them:
-    # path('api/', include('comments.urls')),
-    # path('api/', include('prayer_requests.urls')),
-    # path('api/', include('payments.urls')),
+     path('comments/', include('comments.urls')),
+     path('prayer_requests/', include('prayer_requests.urls')),
+     path('payments/', include('payments.urls')),
 
     # API Documentation (DRF-YASG)
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

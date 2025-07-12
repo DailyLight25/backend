@@ -100,12 +100,13 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'myprojectdb',
         'USER': 'postgres',
-        'PASSWORD': '153932022',
+        'PASSWORD': 'favor@254',
         'HOST': 'localhost',
         'PORT': '5433',
     }
 }
 
+STRIPE_SECRET_KEY = "your_real_stripe_secret_key_here"
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
