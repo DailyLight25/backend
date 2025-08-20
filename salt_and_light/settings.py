@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&8zz@#tc9htq1ox0#p^m9%xf@h&j2l5+uosqy#l8a)q!ydjkej'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -44,20 +45,31 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-   # Django REST Framework
+    # Django REST Framework
     'rest_framework',
-    'rest_framework.authtoken', # For token authentication
-
+    'rest_framework.authtoken',
     # dj-rest-auth
     'dj_rest_auth',
-    'dj_rest_auth.registration', # If you're using the registration views
-
-    # allauth (Crucial for this error)
+    'dj_rest_auth.registration',
+    # allauth
     'allauth',
     'allauth.account',
-    'allauth.socialaccount', # Include this if you plan to use social logins
-    'drf_yasg', # <--- Make sure this is here!
+    'allauth.socialaccount',
+    'drf_yasg',
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SITE_ID = 1  # Add this for django-allauth
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -66,9 +78,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    
-    'allauth.account.middleware.AccountMiddleware', # Add this line
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',    
+    #'allauth.account.middleware.AccountMiddleware', # Add this line
 ]
 
 ROOT_URLCONF = 'salt_and_light.urls'
@@ -95,18 +106,18 @@ WSGI_APPLICATION = 'salt_and_light.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Database
 DATABASES = {
-     'default': {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'myprojectdb',
-        'USER': 'postgres',
-        'PASSWORD': 'favor@254',
-        'HOST': 'localhost',
-        'PORT': '5433',
+        'NAME': config('DB_NAME', default='salt_light'),
+        'USER': config('DB_USER', default='paul_tyler'),
+        'PASSWORD': config('DB_PASSWORD', default=''),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
-
-STRIPE_SECRET_KEY = "your_real_stripe_secret_key_here"
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
