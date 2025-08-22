@@ -1,12 +1,39 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from dj_rest_auth.registration.views import RegisterView as BaseRegisterView
+# from dj_rest_auth.registration.views import RegisterView as BaseRegisterView
+from django.contrib.sites.shortcuts import get_current_site
+from django.urls import reverse
+from django.core.mail import send_mail
 from .models import User
 from .serializers import UserProfileSerializer, UserRegisterSerializer
+from django.conf import settings
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
-class UserRegistrationView(BaseRegisterView):
+
+
+class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserRegisterSerializer
+
+    def perform_create(self, serializer):
+        user = serializer.save(is_verified=False)  # new user starts unverified
+        token = RefreshToken.for_user(user).access_token
+        # Add user_id manually if needed
+        token["user_id"] = user.id
+
+        current_site = get_current_site(self.request).domain
+        relative_link = reverse("email-verify")
+        abs_url = f"http://{current_site}{relative_link}?token={str(token)}"
+
+        # Send email
+        send_mail(
+            subject="Verify your email",
+            message=f"Hi {user.username}, use this link to verify your email: {abs_url}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+        )
+        return user
+
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
@@ -14,11 +41,30 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        # Allow users to retrieve/update their own profile using /api/users/me/
         return self.request.user
+
 
 class PublicUserProfileView(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserProfileSerializer
-    permission_classes = [permissions.AllowAny] # Publicly accessible
-    lookup_field = 'id' # To access by user ID (e.g., /api/users/1/)
+    permission_classes = [permissions.AllowAny]
+    lookup_field = "id"
+
+
+class VerifyEmailView(APIView):
+    def get(self, request, *args, **kwargs):
+        token = request.GET.get("token")
+        try:
+            # Use SimpleJWT's AccessToken instead of raw jwt.decode
+            access_token = AccessToken(token)
+            user_id = access_token["user_id"]
+
+            user = User.objects.get(id=user_id)
+            if not user.is_verified:
+                user.is_verified = True
+                user.save()
+
+            return Response({"message": "Email successfully verified!"}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -5,7 +5,7 @@ class User(AbstractUser):
     # Add custom fields here if needed, e.g., language preference, premium status
     language = models.CharField(max_length=10, default='en', help_text="User's preferred language for content.")
     premium_status = models.BooleanField(default=False, help_text="True if user has a premium subscription.")
-    profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True, help_text="User's profile picture.")
+    profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=False, help_text="User's profile picture.")
 
     class Meta:
         verbose_name = "User"

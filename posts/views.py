@@ -7,6 +7,7 @@ from .models import Post, Reaction
 from .serializers import PostSerializer, ReactionSerializer
 from .permissions import IsAuthorOrReadOnly, IsAdminUserOrReadOnly # Custom permissions (define below)
 from django.db import models # <--- ADD THIS LINE!
+from django.db.models import Count
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -61,7 +62,12 @@ class PostViewSet(viewsets.ModelViewSet):
             from django.utils import timezone
             from datetime import timedelta
             seven_days_ago = timezone.now() - timedelta(days=7)
-            trending_posts = self.get_queryset().filter(created_at__gte=seven_days_ago).order_by('-views', '-reactions__count')[:10]
+            trending_posts = (
+    self.get_queryset()
+    .filter(created_at__gte=seven_days_ago)
+    .annotate(reaction_count=Count('reactions'))
+    .order_by('-views', '-reaction_count')[:10]
+)
             serializer = self.get_serializer(trending_posts, many=True)
             trending_posts = serializer.data
             cache.set('trending_posts', trending_posts, timeout=60 * 60) # Cache for 1 hour
@@ -80,3 +86,5 @@ class ReactionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
