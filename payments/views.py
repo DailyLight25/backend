@@ -4,22 +4,31 @@ from rest_framework.decorators import action, api_view, permission_classes
 from django.shortcuts import get_object_or_404 
 from django.db import transaction
 from django.conf import settings
-import stripe # Make sure to install: pip install stripe
-# TODO: Import M-Pesa SDK/client here if you're using one, e.g., from daraja.mpesa import Mpesa
+import stripe 
 import logging
+
+from .models import Donation, Subscription
+from .serializers import DonationSerializer, CreateDonationSerializer, SubscriptionSerializer, CreateSubscriptionSerializer
+from users.models import User # To update premium status
 
 logger = logging.getLogger(__name__)
 
 # Initialize Stripe (move to settings or a config file in production)
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
-from .models import Donation, Subscription
-from .serializers import DonationSerializer, CreateDonationSerializer, SubscriptionSerializer, CreateSubscriptionSerializer
-from users.models import User # To update premium status
 
 class PaymentViewSet(viewsets.GenericViewSet):
     # This ViewSet will handle general payment-related actions, not tied to a single model
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action == 'donate':
+            return CreateDonationSerializer
+        elif self.action == 'subscribe':
+            return CreateSubscriptionSerializer
+        elif self.action == 'status':
+            return SubscriptionSerializer
+        return None  # Default case 
 
     @action(detail=False, methods=['post'], serializer_class=CreateDonationSerializer)
     def donate(self, request):
@@ -35,9 +44,7 @@ class PaymentViewSet(viewsets.GenericViewSet):
 
         if payment_method == 'Stripe':
             try:
-                # Create a Stripe PaymentIntent
-                # In a real app, you'd receive a client-side payment method ID (e.g., card token)
-                # and confirm it. This is a simplified example.
+                # a Stripe PaymentIntent 
                 charge = stripe.Charge.create(
                     amount=int(amount * 100), # amount in cents
                     currency=currency,
@@ -55,28 +62,13 @@ class PaymentViewSet(viewsets.GenericViewSet):
                 message = f"Stripe payment failed: {str(e)}"
                 return Response({'detail': message}, status=status.HTTP_400_BAD_REQUEST)
         elif payment_method == 'M-Pesa':
-            # Simulate M-Pesa STK Push (actual integration is more complex with callbacks)
             phone_number = request.data.get('phone_number')
             if not phone_number:
                 return Response({'detail': 'Phone number is required for M-Pesa donation.'}, status=status.HTTP_400_BAD_REQUEST)
             
-            # TODO: Implement actual M-Pesa Daraja API STK Push logic here
-            # mpesa_client = Mpesa(settings.M_PESA_CONSUMER_KEY, settings.M_PESA_CONSUMER_SECRET)
-            # response = mpesa_client.stk_push(
-            #     phone_number=phone_number,
-            #     amount=amount,
-            #     callback_url="https://yourdomain.com/api/payments/mpesa-callback/",
-            #     account_reference="SaltAndLightDonation",
-            #     transaction_desc="Salt & Light Donation"
-            # )
-            # If STK push is successful, return pending and await callback
-            # transaction_id = response.CheckoutRequestID # Example
-            # status_code = 'pending'
-            # message = "M-Pesa STK Push initiated. Awaiting confirmation."
-            
-            # For now, simulate success
+            # Simulate M-Pesa STK Push
             transaction_id = f"MPESA_SIM_{user.id}_{amount}_{currency}_{phone_number}_{timezone.now().timestamp()}"
-            status_code = 'pending' # Or 'completed' if you don't await callback
+            status_code = 'pending'
             message = "M-Pesa STK Push simulated. Awaiting confirmation."
         else:
             return Response({'detail': 'Unsupported payment method.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -128,35 +120,21 @@ class PaymentViewSet(viewsets.GenericViewSet):
 
         try:
             with transaction.atomic():
-                if stripe_payment_token: # Assuming Stripe for subscriptions
-                    # In a real Stripe integration, you'd typically create a Customer, then a Subscription.
-                    # This is a highly simplified mock.
+                if stripe_payment_token:
                     customer = stripe.Customer.create(
                         email=user.email,
-                        source=stripe_payment_token # For one-time payment, or attach to customer for recurring
+                        source=stripe_payment_token
                     )
-                    # For recurring, you'd create a Subscription object linked to a Stripe Product/Price
-                    # subscription = stripe.Subscription.create(
-                    #     customer=customer.id,
-                    #     items=[{'price': 'price_123'}], # Replace with actual Stripe Price ID
-                    #     expand=['latest_invoice.payment_intent']
-                    # )
-                    # For now, just simulate a successful charge
                     charge = stripe.Charge.create(
-                        amount=int(price * 100), # For initial payment
+                        amount=int(price * 100),
                         currency=currency,
                         customer=customer.id,
                         description=f"{plan_name} subscription for {user.username}",
                     )
-                    
-                    subscription_id = f"STRIPE_SUB_{charge.id}" # Simplified
+                    subscription_id = f"STRIPE_SUB_{charge.id}"
                     subscription_status = 'active'
                     message = "Stripe subscription activated."
-                elif phone_number: # M-Pesa for subscriptions (more complex with recurring)
-                    # M-Pesa is not natively designed for recurring subscriptions.
-                    # You'd need a custom recurring billing system or rely on user-initiated payments.
-                    # For a simple freemium, you might just process a one-time payment for a period.
-                    # TODO: Implement M-Pesa one-time payment for the subscription period
+                elif phone_number:
                     subscription_id = f"MPESA_SUB_SIM_{user.id}_{plan_name}_{timezone.now().timestamp()}"
                     subscription_status = 'active'
                     message = "M-Pesa subscription simulated (one-time payment)."
@@ -172,10 +150,8 @@ class PaymentViewSet(viewsets.GenericViewSet):
                     status=subscription_status,
                     is_active=True,
                     last_payment_date=timezone.now(),
-                    end_date=timezone.now() + timezone.timedelta(days=30 if 'monthly' in plan_name else 365) # Example
+                    end_date=timezone.now() + timezone.timedelta(days=30 if 'monthly' in plan_name else 365)
                 )
-                
-                # Update user's premium status
                 user.premium_status = True
                 user.save()
 
@@ -184,7 +160,6 @@ class PaymentViewSet(viewsets.GenericViewSet):
         except Exception as e:
             logger.error(f"Subscription error: {e}", exc_info=True)
             return Response({'detail': f'Subscription failed: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
-
 
     @action(detail=False, methods=['get'])
     def status(self, request):
