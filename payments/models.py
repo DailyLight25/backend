@@ -17,6 +17,7 @@ class Donation(models.Model):
     def __str__(self):
         return f"Donation of {self.amount} {self.currency} by {self.user.username if self.user else 'Anonymous'}"
 
+
 class Subscription(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription')
     plan_name = models.CharField(max_length=50) # e.g., 'Premium Monthly', 'Annual Supporter'
@@ -28,6 +29,7 @@ class Subscription(models.Model):
     end_date = models.DateTimeField(null=True, blank=True) # For fixed-term subscriptions or when canceled
     last_payment_date = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    
 
     class Meta:
         ordering = ['-start_date']

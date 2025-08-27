@@ -2,7 +2,8 @@ Django~=4.2.0
 djangorestframework~=3.14.0
 python-decouple~=3.8
 psycopg2-binary~=2.9.0
-django-rest-auth~=0.9.0 # For dj-rest-auth
+dj-rest-auth==3.0.0  # Updated from django-rest-auth
+django-allauth==0.50.0  # Required for registration
 # Pillow~=10.0.0 # For image processing in Django
 PyPDF2~=3.0.1 # For PDF processing in AI moderation
 # redis~=4.5.0 # For Redis caching

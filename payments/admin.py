@@ -39,3 +39,4 @@ class SubscriptionAdmin(admin.ModelAdmin):
             'fields': ('start_date', 'end_date', 'last_payment_date')
         }),
     )
+    
