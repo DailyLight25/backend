@@ -25,7 +25,7 @@ OPENAI_API_KEY = config("OPENAI_API_KEY")
 SECRET_KEY = 'django-insecure-&8zz@#tc9htq1ox0#p^m9%xf@h&j2l5+uosqy#l8a)q!ydjkej'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
     "localhost",       # Local development
