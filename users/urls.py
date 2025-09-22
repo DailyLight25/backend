@@ -9,7 +9,7 @@ from .views import UserRegistrationView, VerifyEmailView, UserProfileView, Publi
 urlpatterns = [
     # Registration + Email Verification
     path('register/', UserRegistrationView.as_view(), name='register'),
-    path('verify-email/', VerifyEmailView.as_view(), name='verify-email'),
+    path('email-verify/', VerifyEmailView.as_view(), name='email-verify'),
 
     # JWT Login & Refresh
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

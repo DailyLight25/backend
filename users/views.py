@@ -9,15 +9,19 @@ from .models import User
 from .serializers import UserProfileSerializer, UserRegisterSerializer
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-
+from rest_framework.permissions import AllowAny
 
 
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserRegisterSerializer
+    permission_classes = [AllowAny]   # 👈 add this
+
 
     def perform_create(self, serializer):
         user = serializer.save(is_verified=False)  # new user starts unverified
-        token = RefreshToken.for_user(user).access_token
+        refresh = RefreshToken.for_user(user)
+        token = refresh.access_token
+        token["purpose"] = "email_verification"   # 👈 custom claim
         # Add user_id manually if needed
         token["user_id"] = user.id
 
@@ -38,7 +42,7 @@ class UserRegistrationView(generics.CreateAPIView):
 class UserProfileView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_object(self):
         return self.request.user
@@ -52,17 +56,25 @@ class PublicUserProfileView(generics.RetrieveAPIView):
 
 
 class VerifyEmailView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, *args, **kwargs):
         token = request.GET.get("token")
         try:
-            # Use SimpleJWT's AccessToken instead of raw jwt.decode
-            access_token = AccessToken(token)
-            user_id = access_token["user_id"]
+            decoded = AccessToken(token)
+            if decoded.get("purpose") != "email_verification":
+                return Response({"error": "Invalid token purpose"}, status=status.HTTP_400_BAD_REQUEST)
 
+            user_id = decoded["user_id"]
             user = User.objects.get(id=user_id)
-            if not user.is_verified:
+
+            # Mark both verified and active
+            if not user.is_active:
+                user.is_active = True
+            if hasattr(user, "is_verified") and not user.is_verified:
                 user.is_verified = True
-                user.save()
+
+            user.save()
 
             return Response({"message": "Email successfully verified!"}, status=status.HTTP_200_OK)
 
