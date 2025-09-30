@@ -6,6 +6,7 @@ from django.core.cache import cache
 from .models import PrayerRequest
 from .serializers import PrayerRequestSerializer
 from posts.permissions import IsAuthorOrReadOnly # Re-use permission for updating own requests
+from django.db import models
 
 class PrayerRequestViewSet(viewsets.ModelViewSet):
     queryset = PrayerRequest.objects.all()
