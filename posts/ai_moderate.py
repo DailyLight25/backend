@@ -1,39 +1,51 @@
-import os
-from openai import OpenAI
+import google.generativeai as genai
 from django.conf import settings
 
-# Initialize the OpenAI client.
-# The client automatically uses the OPENAI_API_KEY environment variable.
-# You can also pass it explicitly like this: client = OpenAI(api_key=settings.OPENAI_API_KEY)
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+# Configuration of Gemini with the API key
+genai.configure(api_key=settings.GEMINI_API_KEY)
+
+# Initializing the Gemini model
+model = genai.GenerativeModel("gemini-pro")
 
 def ai_moderate_content(content: str) -> dict:
     """
-    Moderates content using the OpenAI Moderation API (v1.0.0+).
+    Simulates content moderation using Gemini by prompting the model to evaluate safety.
 
     Args:
-        content (str): The text content to be moderated.
+        content (str): The text content to be evaluated.
 
     Returns:
-        dict: A dictionary containing moderation results.
+        dict: A dictionary containing moderation feedback.
     """
     try:
-        # Use the new client-based syntax: client.moderations.create
-        resp = client.moderations.create(input=content)
-        result = resp.results[0]
-        
-        return {
-            "flagged": result.flagged,
-            "categories": result.categories.dict(),
-            "scores": result.category_scores.dict(),
-        }
+        prompt = (
+            "You are a content moderation assistant. "
+            "Analyze the following text and return whether it is flagged, "
+            "and list any concerning categories (e.g., hate speech, violence, adult content). "
+            "Respond in JSON format with keys: flagged (true/false), categories (list), and notes (string).\n\n"
+            f"Content:\n{content}"
+        )
+
+        response = model.generate_content(prompt)
+        moderation = response.text.strip()
+
+        # Optional: parse the JSON if Gemini returns structured output
+        import json
+        try:
+            return json.loads(moderation)
+        except json.JSONDecodeError:
+            return {
+                "flagged": False,
+                "categories": [],
+                "notes": "Could not parse Gemini response.",
+                "raw_response": moderation
+            }
+
     except Exception as e:
-        # It's good practice to log or handle exceptions gracefully
-        print(f"An error occurred during AI moderation: {e}")
-        # Return a safe default result in case of failure
+        print(f"Gemini moderation error: {e}")
         return {
             "flagged": False,
-            "categories": {},
-            "scores": {},
+            "categories": [],
+            "notes": "Error during moderation.",
             "error": str(e)
         }
