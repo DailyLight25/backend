@@ -2,10 +2,10 @@ from django.db import models
 # Change the import:
 from django.db.models import JSONField # <--- CHANGE THIS LINE!
 from users.models import User # Import the custom User model
+from .ai_moderate import ai_moderate_content
 
 class Post(models.Model):
     STATUS_CHOICES = [
-        ('draft', 'Draft'),
         ('pending', 'Pending Moderation'),
         ('published', 'Published'),
         ('flagged', 'Flagged by AI'),
@@ -22,6 +22,12 @@ class Post(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     ai_moderation_feedback = JSONField(default=dict, blank=True, null=True) # e.g., {"status": "flagged", "reason": "Potential hate speech"}
 
+    def save(self, *args, **kwargs):
+        if self.status == "pending":
+            result = ai_moderate_content(self.content)
+            self.status = "flagged" if result["flagged"] else "published"
+            self.ai_moderation_feedback = result
+        super().save(*args, **kwargs)
     class Meta:
         ordering = ['-created_at']
 
@@ -30,14 +36,27 @@ class Post(models.Model):
 
 class Reaction(models.Model):
     REACTION_CHOICES = [
-        ('heart', 'Heart'),
-        ('pray', 'Pray'),
-        # Add more reactions as needed
+        ("like", "👍"),
+        ("love", "❤️"),
+        ("laugh", "😂"),
+        ("sad", "😢"),
+        ("fire", "🔥"),
+        ("heart", "❤️"),
+        ("pray", "🙏"),
+        ("amen", "✝️"),
     ]
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='reactions')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reactions')
+
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name="reactions"
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="reactions"
+    )
     type = models.CharField(max_length=20, choices=REACTION_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['post', 'user', 'type'] # A user can only add one of each reaction type to a post
+        unique_together = ["post", "user", "type"]  # Prevent duplicate same reaction
+
+    def __str__(self):
+        return f"{self.user} reacted {self.get_type_display()} on {self.post.title}"

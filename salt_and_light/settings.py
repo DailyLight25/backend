@@ -9,13 +9,14 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
 from pathlib import Path
+from datetime import timedelta
 from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+OPENAI_API_KEY = config("OPENAI_API_KEY")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -26,7 +27,10 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",       # Local development
+    "127.0.0.1"
+]
 
 
 # Application definition
@@ -39,6 +43,7 @@ INSTALLED_APPS = [
     'files',
     'payments',
     'core',
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -58,29 +63,17 @@ INSTALLED_APPS = [
     'drf_yasg',
 ]
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-}
 
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-]
+CORS_ALLOW_CREDENTIALS = True
 
-SITE_ID = 1  # Add this for django-allauth
-
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -90,6 +83,28 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',    
     #'allauth.account.middleware.AccountMiddleware', # Add this line
 ]
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+# CSRF_COOKIE_SECURE = False  # Set to True in production
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',  # Adjust this to your frontend URL
+]
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
 
 ROOT_URLCONF = 'salt_and_light.urls'
 
@@ -126,7 +141,30 @@ DATABASES = {
         'PORT': config('DB_PORT', default='5432'),
     }
 }
-STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'JWT Authorization header using the Bearer scheme. Example: "Bearer {token}"'
+        }
+    },
+}
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' # This line indicates you're trying to use a real SMTP server
+EMAIL_HOST = 'smtp.gmail.com'  # <-- CHECK THIS (e.g., 'smtp.gmail.com', 'smtp.sendgrid.net')
+EMAIL_PORT = 587             # <-- CHECK THIS (e.g., 587 for TLS, 465 for SSL)
+EMAIL_USE_TLS = True         # Usually True for 587
+EMAIL_USE_SSL = False        # Set to True for port 465, but typically exclusive with EMAIL_USE_TLS
+EMAIL_HOST_USER = 'emarube89@gmail.com' # Your SMTP username
+EMAIL_HOST_PASSWORD = 'wsfvngaelbybcizo' # Your SMTP password/app-specific password
+DEFAULT_FROM_EMAIL = 'emarube89@gmail.com' # Or your sending email address
+SERVER_EMAIL = 'emarube89@gmail.com' # Used for error messages
+
+STRIPE_SECRET_KEY = "your_real_stripe_secret_key_here"
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -146,6 +184,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static'),
+# ]
+
+# The absolute path to the directory where `collectstatic` will collect
+# all static files for deployment.
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -162,7 +207,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
