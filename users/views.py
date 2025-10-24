@@ -18,24 +18,27 @@ class UserRegistrationView(generics.CreateAPIView):
 
 
     def perform_create(self, serializer):
-        user = serializer.save(is_verified=False)  # new user starts unverified
-        refresh = RefreshToken.for_user(user)
-        token = refresh.access_token
-        token["purpose"] = "email_verification"   # 👈 custom claim
-        # Add user_id manually if needed
-        token["user_id"] = user.id
+        # Auto-verify users for development (skip email verification)
+        user = serializer.save(is_verified=True, is_active=True)  # auto-verify and activate
+        
+        # Comment out email verification code for development
+        # refresh = RefreshToken.for_user(user)
+        # token = refresh.access_token
+        # token["purpose"] = "email_verification"   # 👈 custom claim
+        # # Add user_id manually if needed
+        # token["user_id"] = user.id
 
-        current_site = get_current_site(self.request).domain
-        relative_link = reverse("email-verify")
-        abs_url = f"http://{current_site}{relative_link}?token={str(token)}"
+        # current_site = get_current_site(self.request).domain
+        # relative_link = reverse("email-verify")
+        # abs_url = f"http://{current_site}{relative_link}?token={str(token)}"
 
-        # Send email
-        send_mail(
-            subject="Verify your email",
-            message=f"Hi {user.username}, use this link to verify your email: {abs_url}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-        )
+        # # Send email
+        # send_mail(
+        #     subject="Verify your email",
+        #     message=f"Hi {user.username}, use this link to verify your email: {abs_url}",
+        #     from_email=settings.DEFAULT_FROM_EMAIL,
+        #     recipient_list=[user.email],
+        # )
         return user
 
 
