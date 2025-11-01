@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Follow
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
@@ -86,7 +86,51 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    follower_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    is_following = serializers.SerializerMethodField()
+    is_self = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'profile_picture', 'date_joined', 'last_login']
-        read_only_fields = ['id', 'username', 'email', 'date_joined', 'last_login']
+        fields = [
+            'id',
+            'username',
+            'email',
+            'profile_picture',
+            'date_joined',
+            'last_login',
+            'follower_count',
+            'following_count',
+            'is_following',
+            'is_self',
+        ]
+        read_only_fields = [
+            'id',
+            'username',
+            'email',
+            'date_joined',
+            'last_login',
+            'follower_count',
+            'following_count',
+            'is_following',
+            'is_self',
+        ]
+
+    def get_follower_count(self, obj):
+        return obj.follower_relations.count()
+
+    def get_following_count(self, obj):
+        return obj.following_relations.count()
+
+    def get_is_following(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and request.user != obj:
+            return Follow.objects.filter(follower=request.user, following=obj).exists()
+        return False
+
+    def get_is_self(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj == request.user
+        return False

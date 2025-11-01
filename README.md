@@ -17,6 +17,7 @@ A comprehensive Django REST API for the Salt & Light Christian blogging platform
 - **JWT Authentication**: Secure token-based authentication
 - **AI Integration**: Google Gemini for content moderation
 - **File Uploads**: Secure file handling with size limits and type validation
+- **Media Storage**: Supabase-backed image storage for post media
 - **Database**: PostgreSQL with optimized queries
 - **CORS Support**: Cross-origin resource sharing for frontend integration
 
@@ -36,6 +37,7 @@ A comprehensive Django REST API for the Salt & Light Christian blogging platform
 - Python 3.8+
 - PostgreSQL 12+
 - Google Gemini API key
+- Supabase project with a public storage bucket (use a Service Role key server-side)
 - Stripe account (for payments)
 
 ## 🚀 Installation
@@ -68,6 +70,10 @@ STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
 STRIPE_SECRET_KEY=your-stripe-secret-key
 ALLOWED_HOSTS=localhost,127.0.0.1
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_KEY=your-supabase-service-role-or-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key # optional but recommended for server-side uploads
+SUPABASE_POST_IMAGE_BUCKET=post-image-storage
 ```
 
 ### 5. Database Setup
@@ -117,6 +123,9 @@ The API will be available at `http://localhost:8000`
 #### Files
 - `POST /files/` - Upload file
 - `GET /files/{id}/` - Get file details
+
+#### Media Uploads
+- `POST /api/upload-image/` - Upload a post image to Supabase storage (authenticated)
 
 ## 🏗️ Project Structure
 

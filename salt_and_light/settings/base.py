@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     # built-in
     'django.contrib.staticfiles', 'django.contrib.auth', 'django.contrib.contenttypes',
+    'django.contrib.sessions',
 ]
 
 MIDDLEWARE = [
@@ -95,6 +96,12 @@ CORS_ALLOW_ALL_ORIGINS = False  # Set to True only for development
 # Media files configuration
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
+
+# Supabase configuration
+SUPABASE_URL = config('SUPABASE_URL', default='')
+SUPABASE_KEY = config('SUPABASE_KEY', default='')
+SUPABASE_SERVICE_ROLE_KEY = config('SUPABASE_SERVICE_ROLE_KEY', default='')
+SUPABASE_POST_IMAGE_BUCKET = config('SUPABASE_POST_IMAGE_BUCKET', default='post-image-storage')
 
 # Logging configuration
 LOGGING = {

@@ -4,7 +4,15 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
-from .views import UserRegistrationView, VerifyEmailView, UserProfileView, PublicUserProfileView
+from .views import (
+    UserRegistrationView,
+    VerifyEmailView,
+    UserProfileView,
+    PublicUserProfileView,
+    ToggleFollowView,
+    FollowersListView,
+    FollowingListView,
+)
 
 urlpatterns = [
     # Registration + Email Verification
@@ -18,5 +26,8 @@ urlpatterns = [
 
     # User Profiles
     path('me/', UserProfileView.as_view(), name='user_profile'),
+    path('<int:user_id>/follow/', ToggleFollowView.as_view(), name='toggle_follow'),
+    path('<int:user_id>/followers/', FollowersListView.as_view(), name='followers_list'),
+    path('<int:user_id>/following/', FollowingListView.as_view(), name='following_list'),
     path('<int:id>/', PublicUserProfileView.as_view(), name='public_user_profile'),
 ]
