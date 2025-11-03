@@ -14,6 +14,10 @@ DATABASES = {
     }
 }
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+
 # Disable email sending
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
