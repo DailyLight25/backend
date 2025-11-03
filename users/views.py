@@ -5,11 +5,12 @@ from rest_framework.response import Response
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 from django.core.mail import send_mail
-from .models import User
+from .models import User, Follow
 from .serializers import UserProfileSerializer, UserRegisterSerializer
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.permissions import AllowAny
+from django.shortcuts import get_object_or_404
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -18,24 +19,27 @@ class UserRegistrationView(generics.CreateAPIView):
 
 
     def perform_create(self, serializer):
-        user = serializer.save(is_verified=False)  # new user starts unverified
-        refresh = RefreshToken.for_user(user)
-        token = refresh.access_token
-        token["purpose"] = "email_verification"   # 👈 custom claim
-        # Add user_id manually if needed
-        token["user_id"] = user.id
+        # Auto-verify users for development (skip email verification)
+        user = serializer.save(is_verified=True, is_active=True)  # auto-verify and activate
+        
+        # Comment out email verification code for development
+        # refresh = RefreshToken.for_user(user)
+        # token = refresh.access_token
+        # token["purpose"] = "email_verification"   # 👈 custom claim
+        # # Add user_id manually if needed
+        # token["user_id"] = user.id
 
-        current_site = get_current_site(self.request).domain
-        relative_link = reverse("email-verify")
-        abs_url = f"http://{current_site}{relative_link}?token={str(token)}"
+        # current_site = get_current_site(self.request).domain
+        # relative_link = reverse("email-verify")
+        # abs_url = f"http://{current_site}{relative_link}?token={str(token)}"
 
-        # Send email
-        send_mail(
-            subject="Verify your email",
-            message=f"Hi {user.username}, use this link to verify your email: {abs_url}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-        )
+        # # Send email
+        # send_mail(
+        #     subject="Verify your email",
+        #     message=f"Hi {user.username}, use this link to verify your email: {abs_url}",
+        #     from_email=settings.DEFAULT_FROM_EMAIL,
+        #     recipient_list=[user.email],
+        # )
         return user
 
 
@@ -80,3 +84,55 @@ class VerifyEmailView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ToggleFollowView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        target_user = get_object_or_404(User, id=kwargs.get("user_id"))
+
+        if target_user == request.user:
+            return Response({"detail": "You cannot follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
+
+        follow, created = Follow.objects.get_or_create(
+            follower=request.user,
+            following=target_user,
+        )
+
+        if created:
+            serializer = UserProfileSerializer(target_user, context={"request": request})
+            return Response({"detail": "Now following user.", "user": serializer.data}, status=status.HTTP_201_CREATED)
+
+        return Response({"detail": "You already follow this user."}, status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        target_user = get_object_or_404(User, id=kwargs.get("user_id"))
+        deleted, _ = Follow.objects.filter(
+            follower=request.user,
+            following=target_user,
+        ).delete()
+
+        if not deleted:
+            return Response({"detail": "You are not following this user."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserProfileSerializer(target_user, context={"request": request})
+        return Response({"detail": "Unfollowed user.", "user": serializer.data}, status=status.HTTP_200_OK)
+
+
+class FollowersListView(generics.ListAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        target_user = get_object_or_404(User, id=self.kwargs.get("user_id"))
+        return User.objects.filter(following_relations__following=target_user).distinct()
+
+
+class FollowingListView(generics.ListAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        target_user = get_object_or_404(User, id=self.kwargs.get("user_id"))
+        return User.objects.filter(follower_relations__follower=target_user).distinct()
