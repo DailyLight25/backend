@@ -7,6 +7,9 @@ from rest_framework_simplejwt.views import (
 from .views import (
     UserRegistrationView,
     VerifyEmailView,
+    VerifyEmailCodeView,
+    CheckEmailVerificationStatusView,
+    TempLoginView,
     UserProfileView,
     PublicUserProfileView,
     ToggleFollowView,
@@ -18,6 +21,9 @@ urlpatterns = [
     # Registration + Email Verification
     path('register/', UserRegistrationView.as_view(), name='register'),
     path('email-verify/', VerifyEmailView.as_view(), name='email-verify'),
+    path('email-verify-code/', VerifyEmailCodeView.as_view(), name='email-verify-code'),
+    path('check-verification-status/', CheckEmailVerificationStatusView.as_view(), name='check_verification_status'),
+    path('temp-login/', TempLoginView.as_view(), name='temp_login'),
 
     # JWT Login & Refresh
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

@@ -26,6 +26,7 @@ media/
 .env
 *.secret
 *.pem
+.env.example
 
 # IDE/editor files
 .vscode/

@@ -15,6 +15,7 @@ INSTALLED_APPS = [
     'allauth', 'allauth.account', 'allauth.socialaccount',
     'drf_yasg',
     # built-in
+    'django.contrib.sites',
     'django.contrib.staticfiles', 'django.contrib.auth', 'django.contrib.contenttypes',
     'django.contrib.sessions',
 ]
@@ -33,6 +34,9 @@ ROOT_URLCONF = 'salt_and_light.urls'
 WSGI_APPLICATION = 'salt_and_light.wsgi.application'
 AUTH_USER_MODEL = 'users.User'
 
+# Sites framework (required for email verification)
+SITE_ID = 1
+
 # Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -40,7 +44,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [], 
+        'DIRS': [BASE_DIR / 'users' / 'templates'], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
