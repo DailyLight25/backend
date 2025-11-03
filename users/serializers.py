@@ -39,16 +39,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             email=validated_data.get('email', ''),
             password=validated_data['password'],
         )
-        # Auto-activate for development (email verification bypassed)
-        user.is_active = True
-        user.is_verified = True
+        # Keep user inactive and unverified until email is verified
+        user.is_active = False
+        user.is_verified = False
         user.save()
 
-        # Comment out verification token generation for development
-        # refresh = RefreshToken.for_user(user)
-        # token = str(refresh.access_token)
-
-        # TODO: send verification email with `token`
         return user
 
 
@@ -72,6 +67,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             if user:
                 if not user.is_active:
                     raise serializers.ValidationError('User account is disabled.')
+                
+                # Check if email is verified
+                if hasattr(user, 'is_verified') and not user.is_verified:
+                    raise serializers.ValidationError('Please verify your email address before logging in.')
                 
                 refresh = self.get_token(user)
                 data = {
