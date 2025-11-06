@@ -1,14 +1,17 @@
 # salt_and_light/settings/base.py
+from decouple import config
+from multiprocessing import process
 import os
 from pathlib import Path
 from datetime import timedelta
-from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 INSTALLED_APPS = [
     # core apps
     'users', 'posts', 'comments', 'prayer_requests', 'files', 'core',
+    'django.contrib.admin',
+    'django.contrib.messages',
     # third-party
     'corsheaders', 'rest_framework', 'rest_framework.authtoken',
     'dj_rest_auth', 'dj_rest_auth.registration',
@@ -26,6 +29,8 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -52,6 +57,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.template.context_processors.static',
                 'django.template.context_processors.media',
+                'django.contrib.auth.context_processors.auth',  # ✅ REQUIRED
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
             
@@ -59,7 +65,7 @@ TEMPLATES = [
         },
     },
 ]
- 
+
 # REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

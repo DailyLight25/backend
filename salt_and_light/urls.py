@@ -4,7 +4,9 @@ from django.conf.urls.static import static
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from django.contrib import admin
 from posts.views import UploadPostImageView
+
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -22,6 +24,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     # Core API endpoints
+    path('admin/', admin.site.urls), 
     path('users/', include('users.urls')),
     path('posts/', include('posts.urls')),
     path('files/', include('files.urls')),
