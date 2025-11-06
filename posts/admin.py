@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Reaction
+from .models import Post, Reaction, PostShare
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
@@ -29,4 +29,12 @@ class ReactionAdmin(admin.ModelAdmin):
     list_display = ('post', 'user', 'type', 'created_at')
     list_filter = ('type', 'created_at')
     search_fields = ('post__title', 'user__username')
+    raw_id_fields = ('post', 'user')
+
+
+@admin.register(PostShare)
+class PostShareAdmin(admin.ModelAdmin):
+    list_display = ('post', 'user', 'platform', 'created_at')
+    list_filter = ('platform', 'created_at')
+    search_fields = ('post__title', 'user__username', 'platform')
     raw_id_fields = ('post', 'user')

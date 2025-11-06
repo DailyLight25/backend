@@ -5,6 +5,8 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.contrib import admin
+from posts.views import UploadPostImageView
+
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -28,6 +30,8 @@ urlpatterns = [
     path('files/', include('files.urls')),
     path('comments/', include('comments.urls')),
     path('prayer_requests/', include('prayer_requests.urls')),
+    path('core/', include('core.urls')),
+    path('api/upload-image/', UploadPostImageView.as_view(), name='upload-image'),
 
     # Auth & Docs
     path('accounts/', include('allauth.urls')),
