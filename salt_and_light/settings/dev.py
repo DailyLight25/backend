@@ -34,8 +34,6 @@ DATABASES = {
     }
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
 GEMINI_API_KEY = config("GEMINI_API_KEY", default="dummy_key")
 
 # Logging

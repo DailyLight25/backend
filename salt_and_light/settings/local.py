@@ -15,7 +15,7 @@ DATABASES = {
 }
 
 # Disable email sending
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # Dummy Gemini key for local testing
 GEMINI_API_KEY = config("GEMINI_API_KEY", default="dummy_key")

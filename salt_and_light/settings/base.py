@@ -1,9 +1,9 @@
 # salt_and_light/settings/base.py
+from decouple import config
 from multiprocessing import process
 import os
 from pathlib import Path
 from datetime import timedelta
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -12,7 +12,6 @@ INSTALLED_APPS = [
     'users', 'posts', 'comments', 'prayer_requests', 'files', 'core',
     'django.contrib.admin',
     'django.contrib.messages',
-    'django.contrib.sessions',
     # third-party
     'corsheaders', 'rest_framework', 'rest_framework.authtoken',
     'dj_rest_auth', 'dj_rest_auth.registration',
