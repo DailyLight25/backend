@@ -32,6 +32,8 @@ urlpatterns = [
     path('prayer_requests/', include('prayer_requests.urls')),
     path('core/', include('core.urls')),
     path('api/upload-image/', UploadPostImageView.as_view(), name='upload-image'),
+    path('api/notifications/', include('notifications.urls')),
+
 
     # Auth & Docs
     path('accounts/', include('allauth.urls')),
