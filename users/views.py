@@ -1,3 +1,4 @@
+from urllib import request
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -7,14 +8,19 @@ from django.urls import reverse
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.utils import timezone
 from django.template.loader import render_to_string
+
+from prayer_requests.models import PrayerRequest
 from .models import User, Follow
 from .serializers import UserProfileSerializer, UserRegisterSerializer
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.shortcuts import get_object_or_404
 import logging
+from .dash import DashboardSerializer
+from notifications.models import Notification
+from posts.models import Post
 
 logger = logging.getLogger(__name__)
 
@@ -357,3 +363,51 @@ class FollowingListView(generics.ListAPIView):
     def get_queryset(self):
         target_user = get_object_or_404(User, id=self.kwargs.get("user_id"))
         return User.objects.filter(follower_relations__follower=target_user).distinct()
+    
+class DashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+      user = request.user
+
+    # 1. User Identity
+      user_data = {
+        "id": user.id,
+        "username": user.username,
+        "full_name": user.get_full_name(),
+        "avatar": getattr(user, "profile_picture", None),
+        "is_verified": getattr(user, "is_verified", False),
+        "current_streak": 0,  # future
+        "followers_count": user.follower_relations.count(),
+        "following_count": user.following_relations.count(),
+        "unread_notifications_count": Notification.objects.filter(
+            recipient=user, is_read=False
+        ).count(),
+        "recent_activity": Post.objects.filter(author=user).order_by("-created_at")[:5],
+        "notifications_preview": Notification.objects.filter(
+            recipient=user
+        ).order_by("-created_at")[:5],
+        "recommended_content": Post.objects.exclude(author=user).order_by("-views")[:5],
+    }
+
+    # 2. Stats
+      stats = {
+        "totalPosts": Post.objects.filter(author=user).count(),
+        "totalPrayers": PrayerRequest.objects.filter(user=user).count(),
+        "totalComments": sum(p.comments.count() for p in Post.objects.filter(author=user)),
+        "totalViews": sum(p.views for p in Post.objects.filter(author=user)),
+        "totalReactions": sum(p.reaction_count for p in Post.objects.filter(author=user)),
+        "joinDate": user.date_joined,
+        "lastActive": user.last_login,
+    }
+
+    # 3. Final payload
+      dashboard_data = {
+        "user": user_data,
+        "stats": stats,
+        "posts": Post.objects.filter(author=user).order_by("-created_at"),
+        "prayerRequests": PrayerRequest.objects.filter(user=user).order_by("-created_at"),
+    }
+
+      serializer = DashboardSerializer(instance=dashboard_data, context={"request": request})
+      return Response(serializer.data)

@@ -15,6 +15,7 @@ from .views import (
     ToggleFollowView,
     FollowersListView,
     FollowingListView,
+    DashboardView,
 )
 
 urlpatterns = [
@@ -36,4 +37,7 @@ urlpatterns = [
     path('<int:user_id>/followers/', FollowersListView.as_view(), name='followers_list'),
     path('<int:user_id>/following/', FollowingListView.as_view(), name='following_list'),
     path('<int:id>/', PublicUserProfileView.as_view(), name='public_user_profile'),
+    
+    # Dashboard
+    path('dashboard/', DashboardView.as_view(), name='user_dashboard'),
 ]

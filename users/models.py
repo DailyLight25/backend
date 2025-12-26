@@ -13,6 +13,12 @@ class User(AbstractUser):
     temp_login_token = models.CharField(max_length=64, null=True, blank=True, help_text="Temporary token for post-verification auto-login")
     verification_expires_at = models.DateTimeField(null=True, blank=True, help_text="When the verification link expires")
     verification_code = models.CharField(max_length=6, null=True, blank=True, help_text="6-digit verification code")
+    following = models.ManyToManyField(
+        'self', 
+        symmetrical=False, 
+        related_name='followers', 
+        blank=True
+    )
 
     class Meta:
         verbose_name = "User"
@@ -33,7 +39,7 @@ class User(AbstractUser):
         self.save()
         return self.verification_code
     
-    def set_verification_expiry(self, hours=0, minutes=0):
+    def set_verification_expiry(self, hours=0, minutes=3):
         """Set when the verification link expires"""
         self.verification_expires_at = timezone.now() + timedelta(hours=hours, minutes=minutes)
         self.save()
