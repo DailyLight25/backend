@@ -1,3 +1,4 @@
+from urllib import request
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -7,6 +8,8 @@ from django.urls import reverse
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.utils import timezone
 from django.template.loader import render_to_string
+
+from prayer_requests.models import PrayerRequest
 from .models import User, Follow
 from .serializers import UserProfileSerializer, UserRegisterSerializer
 from django.conf import settings
@@ -361,59 +364,50 @@ class FollowingListView(generics.ListAPIView):
         target_user = get_object_or_404(User, id=self.kwargs.get("user_id"))
         return User.objects.filter(follower_relations__follower=target_user).distinct()
     
-    
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
+      user = request.user
 
-        # ---- 1. Profile + Identity ----
-        profile_data = {
-            "id": user.id,
-            "username": user.username,
-            "full_name": user.get_full_name(),
-            "avatar": user.profile_picture,
-            "is_verified": getattr(user, "is_verified", False),
-            "current_streak": 0,  # placeholder (future feature)
-        }
+    # 1. User Identity
+      user_data = {
+        "id": user.id,
+        "username": user.username,
+        "full_name": user.get_full_name(),
+        "avatar": getattr(user, "profile_picture", None),
+        "is_verified": getattr(user, "is_verified", False),
+        "current_streak": 0,  # future
+        "followers_count": user.follower_relations.count(),
+        "following_count": user.following_relations.count(),
+        "unread_notifications_count": Notification.objects.filter(
+            recipient=user, is_read=False
+        ).count(),
+        "recent_activity": Post.objects.filter(author=user).order_by("-created_at")[:5],
+        "notifications_preview": Notification.objects.filter(
+            recipient=user
+        ).order_by("-created_at")[:5],
+        "recommended_content": Post.objects.exclude(author=user).order_by("-views")[:5],
+    }
 
-        # ---- 2. Engagement stats ----
-        followers_count = user.follower_relations.count()
-        following_count = user.following_relations.count()
+    # 2. Stats
+      stats = {
+        "totalPosts": Post.objects.filter(author=user).count(),
+        "totalPrayers": PrayerRequest.objects.filter(user=user).count(),
+        "totalComments": sum(p.comments.count() for p in Post.objects.filter(author=user)),
+        "totalViews": sum(p.views for p in Post.objects.filter(author=user)),
+        "totalReactions": sum(p.reaction_count for p in Post.objects.filter(author=user)),
+        "joinDate": user.date_joined,
+        "lastActive": user.last_login,
+    }
 
-        unread_notifications_count = Notification.objects.filter(
-            user=user,
-            is_read=False
-        ).count()
+    # 3. Final payload
+      dashboard_data = {
+        "user": user_data,
+        "stats": stats,
+        "posts": Post.objects.filter(author=user).order_by("-created_at"),
+        "prayerRequests": PrayerRequest.objects.filter(user=user).order_by("-created_at"),
+    }
 
-        # ---- 3. Feeds ----
-        recent_activity = Post.objects.filter(
-            author=user
-        ).order_by("-created_at")[:5]
-
-        notifications_preview = Notification.objects.filter(
-            user=user
-        ).order_by("-created_at")[:5]
-
-        recommended_content = Post.objects.exclude(
-            author=user
-        ).order_by("-views")[:5]
-
-        # ---- 4. Aggregate everything ----
-        dashboard_data = {
-            **profile_data,
-            "followers_count": followers_count,
-            "following_count": following_count,
-            "unread_notifications_count": unread_notifications_count,
-            "recent_activity": recent_activity,
-            "notifications_preview": notifications_preview,
-            "recommended_content": recommended_content,
-        }
-
-        serializer = DashboardSerializer(
-            dashboard_data,
-            context={"request": request}
-        )
-
-        return Response(serializer.data)
+      serializer = DashboardSerializer(instance=dashboard_data, context={"request": request})
+      return Response(serializer.data)
